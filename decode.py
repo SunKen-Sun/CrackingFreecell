@@ -4,7 +4,10 @@ import re
 import heapq
 import copy
 import time 
+import pymem
+import mem_func_attack
 
+pm= pymem.Pymem(r"C:\Users\ludlo\Downloads\Group Project_T2\Group Project_T2\freecell.exe.i64")
 suits = {0: "C", "C":0, 1: "D", "D":1, 2: "H", "H":2, 3: "S", "S":3}
 # have both the bit to suit and suit to bit to make access easy and consistent
 
@@ -307,7 +310,7 @@ def check_empty(free_cells):
 
 def main():
     print("paste hex dump (ctrl+D to finish):")
-
+    
     hex_dump = []
     while True:
         try:

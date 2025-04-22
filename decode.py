@@ -137,29 +137,39 @@ def valid_moves(state):
     for col, cascade in enumerate(state["cascade"]):
         if not cascade: continue
         top_card = cascade[-1]
+        
+        index = [i for i, card in enumerate(state["cascade"]) if card == top_card]
         #print(f"top_card: {top_card}")
         if check_foundation(top_card, state['foundation']):
-            moves.append({  "type": "to_foundation", "from" :  col, "card": top_card})
+            #need to identify the location of suits
+            suit_location = [i for i, card in enumerate(state["foundation"]) if top_card[1] == card[1]]
+            moves.append({  "type": "to_foundation", "from" :  col,"c_index": index, "card": top_card, "move_col": 0, "move_ind": suit_location})
 
-        if check_empty(state["freecell"]): moves.append({"type": "to_freecell", "from":  col, "card":top_card})
+        if check_empty(state["freecell"]): 
+            empty_loc = [i for i, card in enumerate(state["freecell"])if card == None]                  
+            moves.append({"type": "to_freecell", "from":  col, "c_index": index, "card":top_card, "move_col":0, "move_ind":empty_loc})
         # 2 checks of just moving a card to either base foundation or a free cell
 
         for dst_col, dst_cas in enumerate(state["cascade"]): # trying to move card to each different cascade
             if col==dst_col: continue
 
-            elif check_stack(top_card, dst_cas): moves.append({"type": "cascade_to_cascade", "from" : col, "to":  dst_col, "card": top_card})
+            elif check_stack(top_card, dst_cas): 
+                index_card = len(state["cascade"][dst_col]) + 1
+                moves.append({"type": "cascade_to_cascade", "from" : col, "c_index": index, "move_col":  dst_col, "card": top_card, "move_ind": index_card})
 
 
-    for cell_index, card in enumerate(state["freecell"]): # trying to move freecell cards to foundation or cascade
+    for cell_index, card in enumerate(state["freecell"]):# trying to move freecell cards to foundation or cascade
+        index = [i for i, e_card in enumerate(cascade) if e_card == card]
         if card is None: continue
 
         if check_foundation(card, state['foundation']):
-            moves.append({  "type": "free_to_foundation", "from" : cell_index, "card": card})
-
+             suit_location = [i for i, card in enumerate(state["foundation"]) if top_card[1] == card[1]]
+            moves.append({  "type": "free_to_foundation", "from" : cell_index, "c_index": index, "card": card, "move_col":0, "move_ind": suit_location})
         for dst_col, dst_cas in enumerate(state["cascade"]):
+            index_card = len(state["cascade"][dst_col]) + 1
             if not dst_cas: continue
 
-            if check_stack(card, dst_cas): moves.append({"type": "free_to_cascade", "from": cell_index, "to": dst_col, "card": card})
+            if check_stack(card, dst_cas): moves.append({"type": "free_to_cascade", "from": cell_index, "c_index": index, "move_col": dst_col, "card": card, "move_ind":index_card})
 
     return moves
 
@@ -209,24 +219,42 @@ def make_move(state, move):
     # given the move description, alter the state to reflect what it would be if the state was chosen.
     move_t = move["type"]
     card = move["card"]
-    move_f = move["from"]
+    move_f = move["from"] #col
+    index = move["c_index"] #index specified card for shell injection
+    #New location address
+    move_col = move["move_col"]
+    move_index = move["move_index"]
+    
     new_state = {"cascade": copy.deepcopy(state["cascade"]), "freecell": state["freecell"].copy(), "foundation": copy.deepcopy(state["foundation"])}
     
     if move_t == "to_foundation":
         add_to_foundation(card, new_state["foundation"])
+        mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
+        mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        
     elif move_t == "to_freecell": 
-        add_to_freecell(card, new_state["freecell"])    
+        add_to_freecell(card, new_state["freecell"])   
+        mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
+        mem_func_attack.Inject_shell_code(pm,move_col, move_index)
     elif move_t == "cascade_to_cascade": 
         add_to_cascade(card, move["to"], new_state["cascade"])
+        mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
+        mem_func_attack.Inject_shell_code(pm,move_col, move_index)
     elif move_t == "free_to_foundation":
         add_to_foundation(card, new_state["foundation"])
+        mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_freecell(card, new_state["freecell"])
+        mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        
+        
     elif move_t == "free_to_cascade":
         add_to_cascade(card, move["to"], new_state["cascade"])
+        mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_freecell(card, new_state["freecell"])
+        mem_func_attack.Inject_shell_code(pm,move_col, move_index)
     else: print(f"ERROR: {move_t}")
 
     return new_state

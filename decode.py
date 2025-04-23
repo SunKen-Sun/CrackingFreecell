@@ -7,7 +7,7 @@ import time
 import pymem
 import mem_func_attack
 
-pm= pymem.Pymem(r"C:\Users\ludlo\Downloads\Group Project_T2\Group Project_T2\freecell.exe.i64")
+pm= pymem.Pymem("freecell.exe")
 suits = {0: "C", "C":0, 1: "D", "D":1, 2: "H", "H":2, 3: "S", "S":3}
 # have both the bit to suit and suit to bit to make access easy and consistent
 
@@ -164,7 +164,7 @@ def valid_moves(state):
 
         if check_foundation(card, state['foundation']):
              suit_location = [i for i, card in enumerate(state["foundation"]) if top_card[1] == card[1]]
-            moves.append({  "type": "free_to_foundation", "from" : cell_index, "c_index": index, "card": card, "move_col":0, "move_ind": suit_location})
+             moves.append({  "type": "free_to_foundation", "from" : cell_index, "c_index": index, "card": card, "move_col":0, "move_ind": suit_location})
         for dst_col, dst_cas in enumerate(state["cascade"]):
             index_card = len(state["cascade"][dst_col]) + 1
             if not dst_cas: continue

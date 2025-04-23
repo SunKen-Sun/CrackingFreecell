@@ -1,7 +1,7 @@
 #TOOL to call functions from memory to interject into Freecell.exe
 import pymem
 import pymem.memory
-import pymem.process import module_from_name
+import pymem.process
 import struct
 
 #pm = pymem.Pymem('freecell.exe') variable for the actively used memory from freecell

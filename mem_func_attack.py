@@ -95,7 +95,15 @@ def hex_dump_fo_cards(data, address):
     for i in range(0, len(data), 16):
         chunk = data[i:i+16]
         hex_bytes = ' '.join(f"{b:02X}" for b in chunk)
-    return hex_bytes
+    return 
+
+def get_initial_cards(pm):
+    data = []
+    for i in range(0x01008B00, 0x01008D80, 4):
+        b = pm.read_bytes(i, 4)
+        v = int.from_bytes(b, byteorder="little")
+        data.append(v)
+    return data
     
 def identify_message_box(pm):
     if(pm.read_bytes(0x0019F6D4, 2) == 0x88):

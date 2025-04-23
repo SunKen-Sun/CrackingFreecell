@@ -75,7 +75,7 @@ def fix_card_structure(cards):
             col = 4 + (i - 28) // 6  # Columns 4-7
             pos = (i - 28) % 6
         # cascades[col][pos] = c[1]
-        cascades[col].append(c[1])
+        cascades[col].append(c)
 
     return cascades
 
@@ -302,25 +302,18 @@ def check_empty(free_cells):
 
 
 def main():
-    print("paste hex dump (ctrl+D to finish):")
-
-    hex_dump = []
-    while True:
-        try:
-            line = input()
-            hex_dump.append(line)
-        except EOFError:
-            break
-
-    full_dump = '\n'.join(hex_dump)
-    cards = scan_hex_dump(full_dump) # raw string of all the info
-
-    cards=cards[0:52] # ignore any extra bytes read in from the paste
+    print("make sure executable is running and path to exe is set in the top PM:")
+    hex_vals = mem_func_attack.get_initial_cards(pm) # returns the raw data values of the entire chunk of code where the cascade is 
+    cards = []
+    for h in hex_vals:
+        decoded = decode_card(h)
+        if decoded: cards.append(decoded) # some values arent actuall cards, ie buffer spaces and the such, so double check they are cards before adding them
+    print(cards)
+    cards=cards[0:52] # ignore any extra bytes read in 
     # cards printed from back left pile to right pile
     # go from back most card to front most in each pile
 
     cards = fix_card_structure(cards)
-    print_cards(cards)
     board = {"cascade": cards, "freecell": [None for n in range(4)],
             "foundation": [[] for n in range(4)] }
     print(board)
@@ -332,7 +325,8 @@ def main():
     print(f"got {xop}")
     print(f"{cost} vs {len(xop['moves'])} vs {len(moves)}")
     print(f"{time.time()-start}")
-    for i,id in enumerate(xop['moves']): ## actually finding
+
+    for i,id in enumerate(xop['moves']): ## area of actually simulating going through the moves in order, each move is guranteed to be in the path for the correct end goal
         move  = moves[id]
         mem_func_attack.Inject_shell_code(pm,move['from'], move['c_index'])
         print(f"{i}, {id} - {moves[id]}")

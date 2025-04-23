@@ -1,6 +1,7 @@
 #TOOL to call functions from memory to interject into Freecell.exe
 import pymem
 import pymem.memory
+import pymem.process import module_from_name
 import struct
 
 #pm = pymem.Pymem('freecell.exe') variable for the actively used memory from freecell
@@ -70,7 +71,7 @@ def Inject_shell_code(pm, a2,a3):
 
     inject_shell = shell_code_create(Paint_hdc, a2, a3, a4, a5)
     inject_sz = len(inject_shell)
-      
+
     alloc_address = pymem.memory.allocate_memory(pm.process_handle, inject_sz);
 
     if(alloc_address and inject_shell):
@@ -84,4 +85,13 @@ def hex_dump_fo_cards(data, address):
         chunk = data[i:i+16]
         hex_bytes = ' '.join(f"{b:02X}" for b in chunk)
     return hex_bytes
+    
+def identify_message_box(pm):
+    if(pm.read_bytes(0x0019F6D4, 2) == 0x88):
+        pm.write_bytes(0x0019F6D4,b"\xC3",1)
+        return
+    else:
+        #nothing
+        return
+    
     

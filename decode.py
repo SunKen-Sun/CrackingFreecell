@@ -231,23 +231,28 @@ def make_move(state, move):
         add_to_foundation(card, new_state["foundation"])
         mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
+        #mem_func_attack.identify_message_box(pm);
         mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        mem_func_attack.identify_message_box(pm);
         
     elif move_t == "to_freecell": 
         add_to_freecell(card, new_state["freecell"])   
         mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
         mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        mem_func_attack.identify_message_box(pm);
     elif move_t == "cascade_to_cascade": 
         add_to_cascade(card, move["to"], new_state["cascade"])
         mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_cascade(move_f, new_state["cascade"])
         mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        mem_func_attack.identify_message_box(pm);
     elif move_t == "free_to_foundation":
         add_to_foundation(card, new_state["foundation"])
         mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_freecell(card, new_state["freecell"])
         mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        mem_func_attack.identify_message_box(pm);
         
         
     elif move_t == "free_to_cascade":
@@ -255,6 +260,7 @@ def make_move(state, move):
         mem_func_attack.Inject_shell_code(pm,move_f, index)
         remove_from_freecell(card, new_state["freecell"])
         mem_func_attack.Inject_shell_code(pm,move_col, move_index)
+        mem_func_attack.identify_message_box(pm);
     else: print(f"ERROR: {move_t}")
 
     return new_state

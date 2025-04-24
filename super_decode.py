@@ -6,6 +6,7 @@ import copy
 import time
 import pymem
 import mem_func_attack
+import pyautogui
 
 pm= pymem.Pymem(r"freecell.exe")
 
@@ -13,6 +14,8 @@ suits = {0: "C", "C":0, 1: "D", "D":1, 2: "H", "H":2, 3: "S", "S":3}
 # have both the bit to suit and suit to bit to make access easy and consistent
 
 move_id = 0
+foundations_set = -1
+fz = set()
 # used to keep track of what moves the path actually ended up using
 
 CASCADE_TO_FOUNDATION   = "CAS_TO_FOUND"
@@ -38,7 +41,7 @@ def decode_card(hex_value):
     except:
         return None
 
-def scan_hex_dump(hex_data):
+def scan_hex_dump(hex_data): # OUTDATED
 
     clean_hex = re.sub(r'[^0-9a-fA-F]', '', hex_data)
 
@@ -101,6 +104,8 @@ def solve(board):
             if state_hash(new_state) not in visited:
                 global move_id
                 move_id +=1
+                if move_id%50000 ==0: 
+                    print(f"at move: {move_id} {state}\n")
                 moves[move_id] = move
                 new_state['moves'][move_id] = None
                 if len(vm) ==1: move['len'] = 1
@@ -123,12 +128,13 @@ def valid_moves(state):
         if not cascade: continue
         top_card = cascade[-1]
         
-        index = [i for i, card in enumerate(state["cascade"]) if card == top_card]
+        # index = [i for i, card in enumerate(state["cascade"]) if card == top_card]
+        index = len(cascade)
         #print(f"top_card: {top_card}")
         if check_foundation(top_card, state['foundation']):
             #need to identify the location of suits
-            suit_location = [i for i, card in enumerate(state["foundation"]) if not card or top_card[-1] == card[0][-1]]
-            moves.append({  "type": CASCADE_TO_FOUNDATION, "from" :  col,"c_index": index, "card": top_card, "move_col": 0, "move_ind": suit_location[0]})
+            suit_location = get_foundation_index(top_card, state['foundation'])
+            moves.append({  "type": CASCADE_TO_FOUNDATION, "from" :  col,"c_index": index, "card": top_card, "move_col": 0, "move_ind": suit_location})
 
         if check_empty(state["freecell"]): 
             empty_loc = [i for i, card in enumerate(state["freecell"])if card == None]                  
@@ -148,8 +154,8 @@ def valid_moves(state):
         if card is None: continue
 
         if check_foundation(card, state['foundation']):
-             suit_location = [i for i, f_card in enumerate(state["foundation"]) if not f_card or  f_card[0][-1] == card[-1]]
-             moves.append({  "type": FREE_TO_FOUNDATION, "from" : cell_index, "c_index": index, "card": card, "move_col":0, "move_ind": suit_location[0]})
+            suit_location = get_foundation_index(card, state['foundation'])
+            moves.append({  "type": FREE_TO_FOUNDATION, "from" : cell_index, "c_index": index, "card": card, "move_col":0, "move_ind": suit_location})
         for dst_col, dst_cas in enumerate(state["cascade"]):
             index_card = len(state["cascade"][dst_col]) + 1
             if not dst_cas: continue
@@ -167,7 +173,12 @@ def valid_moves(state):
     they are what alter a specific part of the state to have the changes that would be made with a given action
 '''
 def add_to_foundation(card, foundation):
-    foundation[suits[card[-1]]].append(card)
+    global foundations_set
+    if card[0] =='A' and card not in fz:
+        fz.add(card)
+        foundations_set +=1
+
+    foundation[get_foundation_index(card, foundation)].append(card)
 
 def remove_from_cascade(origin, cascade):
     if len(cascade[origin]) ==0:
@@ -207,7 +218,7 @@ def make_move(state, move): # simulates being at state1, taking move, then endin
     move_f = move["from"]
     new_state = {"cascade": copy.deepcopy(state["cascade"]), "freecell": state["freecell"].copy(), "foundation": copy.deepcopy(state["foundation"]), 'moves': state['moves'].copy()}
 
-    if move_t == CASCADE_TO_FOUNDATION:
+    if move_t == CASCADE_TO_FOUNDATION:            
         add_to_foundation(card, new_state["foundation"])
         remove_from_cascade(move_f, new_state["cascade"])
     elif move_t == CASCADE_TO_FREE:
@@ -226,9 +237,6 @@ def make_move(state, move): # simulates being at state1, taking move, then endin
 
     return new_state
 
-def track(state):
-    # go through the state and backtrack to find the solution
-    pass
 
 def state_hash(state):
 
@@ -278,16 +286,26 @@ def check_stack(card, dst_cas):
     if len(dst_cas) <1: return True
     return descending(card, dst_cas[-1], True)
 
+def get_foundation_index(card, foundation):
+    suit = card[-1]
+    if card[0] =='A': return foundations_set
+    for i, f in enumerate(foundation): 
+        if not f: continue
+        if f[0][-1] == suit: return i
+    return 4
 
 def check_foundation(card, foundation):
     # find the foundation the card should be in, see if the card is +1 to the foundation top
     # club, diamond, heart, spade: order program will always put stuff in the foundation.
 
     suit = card[-1]
-    if card[0] =='A': return True
-    # if we have an ace then automatically know we can place card value
+    #print(f"{card} - {foundation}")
 
-    if ((len(foundation[suits[suit]]) + 1)  == get_card_value(card) ) :
+    if card[0] =='A': 
+        return True
+    # if we have an ace then automatically know we can place card value
+    index = get_foundation_index(card, foundation)
+    if ((len(foundation[index]) + 1)  == get_card_value(card) ) :
         return True
 
     return False
@@ -299,12 +317,53 @@ def check_empty(free_cells):
             return True
     return False
 
+def move_cursor(move):
+  
+    x = 0
+    y= 0
+    x1 = 0
+    y1 = 0
+
+    if move['type'] == CASCADE_TO_FOUNDATION:
+        x, y = (move['from']+1) *125, 610+(move['c_index']-7)*30
+        x1, y1 = 675 + move['move_ind']*125, 200
+
+    if move['type'] == CASCADE_TO_FREE:
+        x, y = (move['from']+1) *125, 610+(move['c_index']-7)*30
+        x1, y1 = (1 + move['move_ind'])*100, 200
+
+    if move['type'] == CASCADE_TO_CASCADE:
+        x, y = (move['from']+1) *125, 610+(move['c_index']-7)*30
+        x1, y1 = (move['move_col']+1) *125, 610 + (move['move_ind'] -7) * 30
+ 
+    if move['type'] == FREE_TO_CASCADE:
+        x, y = (1 + move['from'])*100, 200
+        x1, y1 = (move['move_col']+1) *125, 610 + (move['move_ind'] -7) * 30
+
+
+    if move['type'] == FREE_TO_FOUNDATION:
+        x, y = (1 + move['from'])*100, 200
+        x1, y1 = 675 + move['move_ind']*125, 200
+
+    pyautogui.moveTo(x,y)
+    pyautogui.click()
+    pyautogui.moveTo(x1, y1)
+    pyautogui.click()
+    pyautogui.moveTo(250,370, duration =0.1) ## place to go to click cancel on the popup
+    pyautogui.click()
+    pyautogui.moveTo(530, 125)  # place to go in case accidentally clicked a card, undos the potential card click
+    pyautogui.click()
+    # print(f"start: {x}, {y}]\t end: {x1}, {y1}")
 
 
 def main():
-    print("make sure executable is running and path to exe is set in the top PM:")
+    print("make sure executable is running and path to exe is set in the PM:")
+    print("Also make sure window for freecell is in the top left")
     hex_vals = mem_func_attack.get_initial_cards(pm) # returns the raw data values of the entire chunk of code where the cascade is 
     cards = []
+
+    
+
     for h in hex_vals:
         decoded = decode_card(h)
         if decoded: cards.append(decoded) # some values arent actuall cards, ie buffer spaces and the such, so double check they are cards before adding them
@@ -315,7 +374,7 @@ def main():
 
     cards = fix_card_structure(cards)
     board = {"cascade": cards, "freecell": [None for n in range(4)],
-            "foundation": [[] for n in range(4)] }
+            "foundation": [[] for n in range(5)] } # 5th place in the foundation is a dummy place so out of bounds doesnt happen
     print(board)
 
     start = time.time()
@@ -326,16 +385,19 @@ def main():
     print(f"{cost} vs {len(xop['moves'])} vs {len(moves)}")
     print(f"{time.time()-start}")
 
+    # ensures we are 'clicked in' to the free cell application
+    pyautogui.moveTo(200,200)
+    pyautogui.mouseDown()
+    pyautogui.mouseUp()
+
     for i,id in enumerate(xop['moves']): ## area of actually simulating going through the moves in order, each move is guranteed to be in the path for the correct end goal
         move  = moves[id]
-        mem_func_attack.Inject_shell_code(pm,move['from'], move['c_index'])
+        #mem_func_attack.Inject_shell_code(pm,move['from'], move['c_index'])
         print(f"{i}, {id} - {moves[id]}")
-        time.sleep(0.1) # wait a tiny bit between injections just in case there is some clock time to consider
+        time.sleep(0.05) 
+        move_cursor(move)
+        time.sleep(0.05)
 
-        mem_func_attack.Inject_shell_code(pm,move['move_col'], move['move_ind'])
-        time.sleep(0.1)
-        mem_func_attack.identify_message_box(pm);
-        time.sleep(0.1)
 
 
 

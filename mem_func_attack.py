@@ -87,6 +87,7 @@ def Inject_shell_code(pm, a2,a3):
 
 
     if(alloc_address and inject_shell):
+       
        pm.write_bytes(alloc_address, inject_shell, inject_sz)
     else:
        print("Injection failed")

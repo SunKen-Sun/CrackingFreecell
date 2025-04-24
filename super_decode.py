@@ -15,7 +15,7 @@ suits = {0: "C", "C":0, 1: "D", "D":1, 2: "H", "H":2, 3: "S", "S":3}
 
 move_id = 0
 foundations_set = -1
-fz = set()
+fz = []
 # used to keep track of what moves the path actually ended up using
 
 CASCADE_TO_FOUNDATION   = "CAS_TO_FOUND"
@@ -118,8 +118,9 @@ def priority(state):
 
     # lower score = better
     # high priority for having more cards in the foundation and less cards in the free cell
-    s = sum(len(fond) for fond in state['foundation'])
-    return (-s )
+    s = [len(fond) for fond in state['foundation']]
+
+    return -sum(s)
 
 
 def valid_moves(state):
@@ -175,8 +176,8 @@ def valid_moves(state):
 def add_to_foundation(card, foundation):
     global foundations_set
     if card[0] =='A' and card not in fz:
-        fz.add(card)
-        foundations_set +=1
+        if card=='AC': print(f"HERE: {foundation} {fz} {foundations_set}")
+        fz.append(card)
 
     foundation[get_foundation_index(card, foundation)].append(card)
 
@@ -288,9 +289,16 @@ def check_stack(card, dst_cas):
 
 def get_foundation_index(card, foundation):
     suit = card[-1]
-    if card[0] =='A': return foundations_set
+    '''
+    if card[0] =='A':
+        if card in fz: 
+            return fz.index(card)
+        return len(fz)
+    '''
     for i, f in enumerate(foundation): 
-        if not f: continue
+        if not f : 
+            if card[0] =='A': return i
+            continue
         if f[0][-1] == suit: return i
     return 4
 
@@ -349,7 +357,7 @@ def move_cursor(move):
     pyautogui.click()
     pyautogui.moveTo(x1, y1)
     pyautogui.click()
-    pyautogui.moveTo(250,370, duration =0.1) ## place to go to click cancel on the popup
+    pyautogui.moveTo(250,370) ## place to go to click cancel on the popup
     pyautogui.click()
     pyautogui.moveTo(530, 125)  # place to go in case accidentally clicked a card, undos the potential card click
     pyautogui.click()
@@ -389,14 +397,13 @@ def main():
     pyautogui.moveTo(200,200)
     pyautogui.mouseDown()
     pyautogui.mouseUp()
-
+    mult = 1
     for i,id in enumerate(xop['moves']): ## area of actually simulating going through the moves in order, each move is guranteed to be in the path for the correct end goal
         move  = moves[id]
         #mem_func_attack.Inject_shell_code(pm,move['from'], move['c_index'])
         print(f"{i}, {id} - {moves[id]}")
-        time.sleep(0.05) 
         move_cursor(move)
-        time.sleep(0.05)
+        if pyautogui.position()[1] <=100: break
 
 
 

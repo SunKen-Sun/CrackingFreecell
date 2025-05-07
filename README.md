@@ -4,3 +4,7 @@ In order to use the program ensure that pymem and pyautogui are installed. Secon
 
 
 demo video: https://drive.google.com/file/d/1BjQ4mwJQ126kzllh9xLJ2jbU4Rp4fDsM/view?usp=drive_link
+
+Full report: https://docs.google.com/document/d/1zEMIymGan1GP1Xfe78W9aRA3L3fo5PZWQ13_I20Gum8/edit?usp=sharing
+
+Project presentation slides: https://docs.google.com/presentation/d/1xIp204kaE8oc9zPSGAPAUe2zqnVGLRhHlZXrk9gbFQI/edit?usp=sharing

@@ -7,6 +7,12 @@ import time
 import pymem
 import mem_func_attack
 import pyautogui
+import tkinter
+import sys
+root = tkinter.Tk()
+WIDTH = root.winfo_screenwidth()
+HEIGHT = root.winfo_screenheight()
+root.destroy()
 
 pm= pymem.Pymem(r"freecell.exe")
 
@@ -369,7 +375,9 @@ def main():
     print("Also make sure window for freecell is in the top left")
     hex_vals = mem_func_attack.get_initial_cards(pm) # returns the raw data values of the entire chunk of code where the cascade is 
     cards = []
-
+    print(WIDTH)
+    print(HEIGHT)
+    
     
 
     for h in hex_vals:
@@ -402,10 +410,8 @@ def main():
         move  = moves[id]
         #mem_func_attack.Inject_shell_code(pm,move['from'], move['c_index'])
         print(f"{i}, {id} - {moves[id]}")
-        move_cursor(move)
+        if len(sys.argv) ==1: move_cursor(move)
         if pyautogui.position()[1] <=100: break
-
-
 
 
 if __name__ == "__main__":
